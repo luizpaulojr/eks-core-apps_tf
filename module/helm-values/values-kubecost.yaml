@@ -1,0 +1,53 @@
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: ${kubecost_ingress_class}
+  hosts:
+    - ${kubecost_url}
+
+kubecostToken: "aGVsbUBrdWJlY29zdC5jb20=xm343yadf98"
+
+persistentVolume:
+  size: 32Gi
+  dbSize: 32.0Gi
+  enabled: true
+
+prometheus:
+  server:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    persistentVolume:
+      size: 32Gi
+      enabled: true
+      
+  nodeExporter:
+    enabled: true
+
+kubecostDeployment:
+  replicas: 1
+
+kubecost:
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "55Mi"
+
+kubecostFrontend:
+  resources:
+    requests:
+      cpu: "10m"
+      memory: "55Mi"
+
+kubecostModel:
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "55Mi"
+      
+global:
+  grafana:
+    enabled: true
+
+      
