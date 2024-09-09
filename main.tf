@@ -14,7 +14,7 @@ module "eks_core_apps" {
   # vpc_cni - https://artifacthub.io/packages/helm/aws/aws-vpc-cni
   vpc_cni_enable      = false
   vpc_cni_version     = "1.18.1"
-  subnets_filter_name = "luiz-general-subnet"      # subnets da rede CNI
+  subnets_filter_name = "general-subnet"      # subnets da rede CNI
   sg_filter_name      = "eks-default-node" # sg do node
 
   # aws_load_balancer_controller - https://artifacthub.io/packages/helm/aws/aws-load-balancer-controller
