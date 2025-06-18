@@ -6,9 +6,6 @@ resource "helm_release" "karpenter" {
   version    = var.karpenter_version
   namespace  = "kube-system"
 
-  values = [
-    file("${path.module}/helm-values/values-karpenter.yaml")
-  ]
   set {
     name  = "serviceAccount.name"
     value = "karpenter-sa"
