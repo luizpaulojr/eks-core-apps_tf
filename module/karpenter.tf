@@ -3,16 +3,21 @@ resource "helm_release" "karpenter" {
   name       = "karpenter"
   chart      = "karpenter"
   repository = "oci://public.ecr.aws/karpenter"
-  version    = var.karpenter_chart_version
+  version    = var.karpenter_version
   namespace  = "kube-system"
 
   values = [
-    file("${path.module}/helm-values/karpenter-values.yaml")
+    file("${path.module}/helm-values/values-karpenter.yaml")
   ]
   set {
     name  = "serviceAccount.name"
-    value = karpenter-sa
+    value = "karpenter-sa"
   }
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = "arn:aws:iam::${local.account_id}:role/${aws_iam_role.eks_karpenter_role[0].name}"
+  } 
 
   set {
     name  = "settings.clusterName"
@@ -47,29 +52,9 @@ resource "helm_release" "karpenter" {
     name  = "controller.resources.limits.memory"
     value = "1Gi"
   }
-
-  depends_on = [
-    module.karpenter
-  ]
 }
 
-
-resource "kubernetes_service_account_v1" "karpenter_sa" {
-  count = var.karpenter_enable ? 1 : 0
-
-  metadata {
-    name      = "karpenter-sa"
-    namespace = "kube-system"
-    labels = {
-      "app.kubernetes.io/component" = "controller"
-      "app.kubernetes.io/name"      = "karpenter-sa"
-    }
-    annotations = {
-      "eks.amazonaws.com/role-arn" = "arn:aws:iam::${local.account_id}:role/${aws_iam_role.eks_karpenter_role[count.index].name}"
-    }
-  }
-}
-
+## AWS Role for Karpenter
 resource "aws_iam_role" "eks_karpenter_role" {
   count = var.karpenter_enable ? 1 : 0
   name  = "AmazonEKSKarpenterRole_terraform"
@@ -95,18 +80,46 @@ resource "aws_iam_role" "eks_karpenter_role" {
   })
 }
 
+## Attaching required AWS Role for Karpenter
+resource "aws_iam_role_policy_attachment" "karpenter_node_worker_node_policy" {
+  count      = var.karpenter_enable ? 1 : 0
+  role       = aws_iam_role.eks_karpenter_role[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_cni_policy" {
+  count      = var.karpenter_enable ? 1 : 0
+  role       = aws_iam_role.eks_karpenter_role[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_ecr_pull" {
+  count      = var.karpenter_enable ? 1 : 0
+  role       = aws_iam_role.eks_karpenter_role[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_ssm" {
+  count      = var.karpenter_enable ? 1 : 0
+  role       = aws_iam_role.eks_karpenter_role[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+## Attaching custom AWS Role for Karpenter
 resource "aws_iam_role_policy_attachment" "attach_karpenter_controller_role_policy" {
   count      = var.karpenter_enable ? 1 : 0
   role       = aws_iam_role.eks_karpenter_role[count.index].name
   policy_arn = aws_iam_policy.eks_karpenter_policy[count.index].arn
 }
 
+## Creating custom role for Karpenter
 resource "aws_iam_policy" "eks_karpenter_policy" {
   count       = var.karpenter_enable ? 1 : 0
   name        = "KarpenterControllerPolicy_terraform"
   description = "EKS to Load Balance Policy"
 
   policy = jsonencode({
+    "Version": "2012-10-17",
     "Statement": [
         {
             "Action": [
@@ -144,13 +157,13 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
         {
             "Effect": "Allow",
             "Action": "iam:PassRole",
-            "Resource": "arn:${AWS_PARTITION}:iam::${AWS_ACCOUNT_ID}:role/KarpenterNodeRole-${CLUSTER_NAME}",
+            "Resource": "arn:aws:iam::${local.account_id}:role/AmazonEKSKarpenterRole_terraform",
             "Sid": "PassNodeIAMRole"
         },
         {
             "Effect": "Allow",
             "Action": "eks:DescribeCluster",
-            "Resource": "arn:${AWS_PARTITION}:eks:${AWS_REGION}:${AWS_ACCOUNT_ID}:cluster/${CLUSTER_NAME}",
+            "Resource": "arn:aws:eks:${local.region}:${local.account_id}:cluster/${local.cluster_name}",
             "Sid": "EKSClusterEndpointLookup"
         },
         {
@@ -162,8 +175,8 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
             ],
             "Condition": {
             "StringEquals": {
-                "aws:RequestTag/kubernetes.io/cluster/${CLUSTER_NAME}": "owned",
-                "aws:RequestTag/topology.kubernetes.io/region": "${AWS_REGION}"
+                "aws:RequestTag/kubernetes.io/cluster/${local.cluster_name}": "owned",
+                "aws:RequestTag/topology.kubernetes.io/region": "${local.region}"
             },
             "StringLike": {
                 "aws:RequestTag/karpenter.k8s.aws/ec2nodeclass": "*"
@@ -179,10 +192,10 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
             ],
             "Condition": {
             "StringEquals": {
-                "aws:ResourceTag/kubernetes.io/cluster/${CLUSTER_NAME}": "owned",
-                "aws:ResourceTag/topology.kubernetes.io/region": "${AWS_REGION}",
-                "aws:RequestTag/kubernetes.io/cluster/${CLUSTER_NAME}": "owned",
-                "aws:RequestTag/topology.kubernetes.io/region": "${AWS_REGION}"
+                "aws:ResourceTag/kubernetes.io/cluster/${local.cluster_name}": "owned",
+                "aws:ResourceTag/topology.kubernetes.io/region": "${local.region}",
+                "aws:RequestTag/kubernetes.io/cluster/${local.cluster_name}": "owned",
+                "aws:RequestTag/topology.kubernetes.io/region": "${local.region}"
             },
             "StringLike": {
                 "aws:ResourceTag/karpenter.k8s.aws/ec2nodeclass": "*",
@@ -201,8 +214,8 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
             ],
             "Condition": {
             "StringEquals": {
-                "aws:ResourceTag/kubernetes.io/cluster/${CLUSTER_NAME}": "owned",
-                "aws:ResourceTag/topology.kubernetes.io/region": "${AWS_REGION}"
+                "aws:ResourceTag/kubernetes.io/cluster/${local.cluster_name}": "owned",
+                "aws:ResourceTag/topology.kubernetes.io/region": "${local.region}"
             },
             "StringLike": {
                 "aws:ResourceTag/karpenter.k8s.aws/ec2nodeclass": "*"
@@ -216,8 +229,6 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
             "Action": "iam:GetInstanceProfile"
         }
     ],
-    "Version": "2012-10-17"
-    ]
     }
   )
 }
