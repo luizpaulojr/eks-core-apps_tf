@@ -140,11 +140,13 @@ variable "karpenter_version" {
 }
 
 variable "disk_size" {
-  default = 30
+  type    = number
+  default = null
 }
 
 variable "disk_iops" {
-  default = 3000
+  type    = number
+  default = null
 }
 
 variable "capacity_type" {
