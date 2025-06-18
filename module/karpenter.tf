@@ -232,3 +232,138 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
     }
   )
 }
+
+resource "kubectl_manifest" "karpenter_node_class" {
+  count     = var.karpenter_enable ? 1 : 0
+  yaml_body = <<-YAML
+    apiVersion: karpenter.k8s.aws/v1beta1
+    kind: EC2NodeClass
+    metadata:
+      name: bottlerocket
+    spec:
+      amiFamily: Bottlerocket
+      amiSelectorTerms:
+        - id: ${data.aws_ami.eks_default_bottlerocket.id}
+      blockDeviceMappings:
+        - deviceName: /dev/xvdb
+          ebs:
+            volumeSize: ${var.disk_size}Gi
+            volumeType: gp3
+            encrypted: true
+            iops: ${var.disk_iops}
+            deleteOnTermination: true
+      role: ${aws_iam_role.eks_karpenter_role[0].name}
+      subnetSelectorTerms:
+        - tags:
+            karpenter.sh/discovery: ${local.cluster_name}
+      securityGroupSelectorTerms:
+        - tags:
+            karpenter.sh/discovery: ${local.cluster_name}
+      tags:
+        karpenter.sh/discovery: ${local.cluster_name}
+  YAML
+
+  depends_on = [
+    helm_release.karpenter
+  ]
+}
+
+resource "kubectl_manifest" "karpenter_node_pool_tools" {
+  count     = var.karpenter_enable ? 1 : 0
+  yaml_body = <<-YAML
+    apiVersion: karpenter.sh/v1
+    kind: NodePool
+    metadata:
+      name: tools
+    spec:
+      template:
+        metadata:
+          labels:
+            workload: tools
+        spec:
+          nodeClassRef:
+            name: bottlerocket
+            kind: EC2NodeClass
+            group: karpenter.k8s.aws
+          requirements:
+            - key: "karpenter.k8s.aws/instance-category"
+              operator: In
+              values: ["t", "c", "m"]
+            - key: "karpenter.k8s.aws/instance-cpu"
+              operator: In
+              values: ["4", "8"]
+            - key: "karpenter.k8s.aws/instance-hypervisor"
+              operator: In
+              values: ["nitro"]
+            - key: "karpenter.k8s.aws/instance-generation"
+              operator: Gt
+              values: ["2"]
+            - key: "kubernetes.io/arch"
+              operator: In
+              values: ["amd64"]
+            - key: "karpenter.sh/capacity-type"
+              operator: In
+              values: ["${var.capacity_type}"]
+      limits:
+        cpu: 1000
+      disruption:
+        consolidationPolicy: WhenEmptyOrUnderutilized
+        consolidateAfter: 30s
+  YAML
+
+  depends_on = [
+    kubectl_manifest.karpenter_node_class
+  ]
+}
+
+resource "kubectl_manifest" "karpenter_node_pool_app" {
+  count     = var.karpenter_enable ? 1 : 0
+  yaml_body = <<-YAML
+    apiVersion: karpenter.sh/v1
+    kind: NodePool
+    metadata:
+      name: app
+    spec:
+      template:
+        metadata:
+          labels:
+            workload: app
+        spec:
+          nodeClassRef:
+            name: bottlerocket
+            kind: EC2NodeClass
+            group: karpenter.k8s.aws
+          requirements:
+            - key: "karpenter.k8s.aws/instance-category"
+              operator: In
+              values: ["t", "c", "m"]
+            - key: "karpenter.k8s.aws/instance-cpu"
+              operator: In
+              values: ["4", "8"]
+            - key: "karpenter.k8s.aws/instance-hypervisor"
+              operator: In
+              values: ["nitro"]
+            - key: "karpenter.k8s.aws/instance-generation"
+              operator: Gt
+              values: ["2"]
+            - key: "kubernetes.io/arch"
+              operator: In
+              values: ["amd64"]
+            - key: "karpenter.sh/capacity-type"
+              operator: In
+              values: ["${var.capacity_type}"]
+          taints:
+            - key: workload
+              value: auto
+              effect: NoSchedule
+      limits:
+        cpu: 1000
+      disruption:
+        consolidationPolicy: WhenEmptyOrUnderutilized
+        consolidateAfter: 30s
+  YAML
+
+  depends_on = [
+    kubectl_manifest.karpenter_node_class
+  ]
+}
