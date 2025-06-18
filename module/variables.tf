@@ -127,3 +127,41 @@ variable "kubecost_ingress_class" {
   type    = string
   default = null
 }
+
+# karpenter
+variable "karpenter_enable" {
+  type    = string
+  default = null
+}
+
+variable "karpenter_version" {
+  type    = string
+  default = null
+}
+
+variable "disk_size" {
+  default = 30
+}
+
+variable "disk_iops" {
+  default = 3000
+}
+
+variable "capacity_type" {
+  default = "on-demand"
+}
+
+data "aws_ami" "eks_default_bottlerocket" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["bottlerocket-aws-k8s-*"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+}
