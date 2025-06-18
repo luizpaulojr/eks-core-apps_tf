@@ -24,6 +24,8 @@ module "eks_core_apps" {
   # karpenter - https://artifacthub.io/packages/helm/aws-karpenter-crd/karpenter-crd
   karpenter_enable  = false
   karpenter_version = "1.5.0"
+  capacity_type     = "on-demand"
+  disk_size         = 30
 
   # autoscaler - https://artifacthub.io/packages/helm/cluster-autoscaler/cluster-autoscaler
   autoscaler_enable  = false
