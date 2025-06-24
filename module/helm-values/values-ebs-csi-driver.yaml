@@ -1,0 +1,20 @@
+controller:
+  serviceAccount:
+    create: false
+    name: ebs-csi-driver-terraform
+
+node:
+  serviceAccount:
+    create: false
+    name: ebs-csi-driver-terraform
+
+storageClasses: 
+# Add StorageClass resources like:
+ - name: ebs-csi
+   annotations:
+     storageclass.kubernetes.io/is-default-class: "true"
+   volumeBindingMode: WaitForFirstConsumer
+   reclaimPolicy: Delete
+   parameters:
+     encrypted: "true"
+     type: gp3
