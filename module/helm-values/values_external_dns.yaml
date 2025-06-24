@@ -1,0 +1,7 @@
+provider: aws
+txtOwnerId: ${external_dns_hosted_zone_id}
+domainFilters:
+  - ${external_dns_hosted_zone_domain}
+serviceAccount:
+  name: external-dns-terraform
+  create: false
