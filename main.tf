@@ -43,7 +43,23 @@ module "eks_core_apps" {
   # kubecost - https://artifacthub.io/packages/helm/kubecost/cost-analyzer
   kubecost_enable        = false
   kubecost_version       = "2.3.0"
-  csi_driver_version     = "2.31.0"
   kubecost_ingress_class = "nginx"
   kubecost_url           = "kubecost.dominio"
+
+  # kube_prometheus_stack - https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
+  kube_prometheus_stack_enable                  = true
+  kube_prometheus_stack_version                 = "68.1.0"
+  kube_prometheus_stack_grafana_ingress_class   = "nginx"
+  kube_prometheus_stack_grafana_url             = "grafana.portofazneo.dev.awsporto"
+  
+  # aws_ebs_csi_driver - https://artifacthub.io/packages/helm/aws-ebs-csi-driver/aws-ebs-csi-driver
+  ebs_csi_driver_enable      = true
+  ebs_csi_driver_version     = "2.39.3"
+  
+  # external_dns - https://artifacthub.io/packages/helm/bitnami/external-dns
+  external_dns_enable              = true
+  external_dns_version             = "8.7.4"
+  external_dns_hosted_zone_id      = "Z06655772UAPK5LQZERAO"
+  external_dns_hosted_zone_domain  = "portofazneo.dev.awsporto"
+
 }
