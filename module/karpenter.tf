@@ -233,7 +233,7 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
 resource "kubectl_manifest" "karpenter_node_class" {
   count     = var.karpenter_enable ? 1 : 0
   yaml_body = <<-YAML
-    apiVersion: karpenter.k8s.aws/v1beta1
+    apiVersion: karpenter.k8s.aws/v1
     kind: EC2NodeClass
     metadata:
       name: bottlerocket
