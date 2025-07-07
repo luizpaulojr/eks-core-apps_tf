@@ -150,20 +150,11 @@ variable "disk_iops" {
 }
 
 variable "capacity_type" {
-  default = "on-demand"
+  type    = string
+  default = null
 }
 
-data "aws_ami" "eks_default_bottlerocket" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["bottlerocket-aws-k8s-*"]
-  }
-
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
+variable "cluster_version" {
+  type    = number
+  default = null
 }

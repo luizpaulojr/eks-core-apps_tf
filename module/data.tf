@@ -33,6 +33,11 @@ data "aws_security_group" "sg_node" {
   }
 }
 
+##AWS AMI Bottlerocket
+data "aws_ssm_parameter" "bottlerocket_ami" {
+  name = "/aws/service/bottlerocket/aws-k8s-${var.cluster_version}/x86_64/latest/image_id"
+}
+
 locals {
   region           = var.region
   cluster_name     = var.cluster_name

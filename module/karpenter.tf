@@ -1,3 +1,4 @@
+############################################## Helm ##############################################
 resource "helm_release" "karpenter" {
   count      = var.karpenter_enable ? 1 : 0
   name       = "karpenter"
@@ -13,7 +14,7 @@ resource "helm_release" "karpenter" {
 
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = "arn:aws:iam::${local.account_id}:role/${aws_iam_role.eks_karpenter_role[0].name}"
+    value = "arn:aws:iam::${local.account_id}:role/${aws_iam_role.eks_karpenter_role_controller[0].name}"
   } 
 
   set {
@@ -49,12 +50,59 @@ resource "helm_release" "karpenter" {
     name  = "controller.resources.limits.memory"
     value = "1Gi"
   }
+    set {  ## remover alertas de SQS para remoção de EC2 Spot
+    name  = "controller.interruptionQueue.create"
+    value = "false"
+  }
 }
 
-## AWS Role for Karpenter
-resource "aws_iam_role" "eks_karpenter_role" {
+############################################## AWS Role for Karpenter Node ##############################################
+resource "aws_iam_role" "eks_karpenter_role_node" {
   count = var.karpenter_enable ? 1 : 0
-  name  = "AmazonEKSKarpenterRole_terraform"
+  name  = "AmazonEKSKarpenterRoleNode_terraform"
+    assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+############################################## Attaching required AWS Policies for Karpenter Node Role ##############################################
+resource "aws_iam_role_policy_attachment" "karpenter_node_worker_node_policy" {
+  count      = var.karpenter_enable ? 1 : 0
+  role       = aws_iam_role.eks_karpenter_role_node[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_cni_policy" {
+  count      = var.karpenter_enable ? 1 : 0
+  role       = aws_iam_role.eks_karpenter_role_node[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_ecr_pull" {
+  count      = var.karpenter_enable ? 1 : 0
+  role       = aws_iam_role.eks_karpenter_role_node[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPullOnly"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_ssm" {
+  count      = var.karpenter_enable ? 1 : 0
+  role       = aws_iam_role.eks_karpenter_role_node[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+############################################## AWS Role for Karpenter Controller ##############################################
+resource "aws_iam_role" "eks_karpenter_role_controller" {
+  count = var.karpenter_enable ? 1 : 0
+  name  = "AmazonEKSKarpenterRoleController_terraform"
 
   assume_role_policy = jsonencode(
     {
@@ -77,43 +125,18 @@ resource "aws_iam_role" "eks_karpenter_role" {
   })
 }
 
-## Attaching required AWS Role for Karpenter
-resource "aws_iam_role_policy_attachment" "karpenter_node_worker_node_policy" {
-  count      = var.karpenter_enable ? 1 : 0
-  role       = aws_iam_role.eks_karpenter_role[count.index].name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "karpenter_node_cni_policy" {
-  count      = var.karpenter_enable ? 1 : 0
-  role       = aws_iam_role.eks_karpenter_role[count.index].name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-}
-
-resource "aws_iam_role_policy_attachment" "karpenter_node_ecr_pull" {
-  count      = var.karpenter_enable ? 1 : 0
-  role       = aws_iam_role.eks_karpenter_role[count.index].name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-
-resource "aws_iam_role_policy_attachment" "karpenter_node_ssm" {
-  count      = var.karpenter_enable ? 1 : 0
-  role       = aws_iam_role.eks_karpenter_role[count.index].name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-## Attaching custom AWS Role for Karpenter
+############################################## Attaching custom AWS Policy for Karpenter Controller Role ##############################################
 resource "aws_iam_role_policy_attachment" "attach_karpenter_controller_role_policy" {
   count      = var.karpenter_enable ? 1 : 0
-  role       = aws_iam_role.eks_karpenter_role[count.index].name
+  role       = aws_iam_role.eks_karpenter_role_controller[count.index].name
   policy_arn = aws_iam_policy.eks_karpenter_policy[count.index].arn
 }
 
-## Creating custom role for Karpenter
+############################################## Creating custom policy for Karpenter ##############################################
 resource "aws_iam_policy" "eks_karpenter_policy" {
   count       = var.karpenter_enable ? 1 : 0
   name        = "KarpenterControllerPolicy_terraform"
-  description = "EKS to Load Balance Policy"
+  description = "Policy to karpenter"
 
   policy = jsonencode({
     "Version": "2012-10-17",
@@ -154,7 +177,7 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
         {
             "Effect": "Allow",
             "Action": "iam:PassRole",
-            "Resource": "arn:aws:iam::${local.account_id}:role/AmazonEKSKarpenterRole_terraform",
+            "Resource": "arn:aws:iam::${local.account_id}:role/AmazonEKSKarpenterRoleNode_terraform",
             "Sid": "PassNodeIAMRole"
         },
         {
@@ -230,6 +253,8 @@ resource "aws_iam_policy" "eks_karpenter_policy" {
   )
 }
 
+############################################## EC2NodeClass ##############################################
+
 resource "kubectl_manifest" "karpenter_node_class" {
   count     = var.karpenter_enable ? 1 : 0
   yaml_body = <<-YAML
@@ -240,7 +265,7 @@ resource "kubectl_manifest" "karpenter_node_class" {
     spec:
       amiFamily: Bottlerocket
       amiSelectorTerms:
-        - id: ${data.aws_ami.eks_default_bottlerocket.id}
+        - id: ${data.aws_ssm_parameter.bottlerocket_ami.value}
       blockDeviceMappings:
         - deviceName: /dev/xvdb
           ebs:
@@ -249,7 +274,7 @@ resource "kubectl_manifest" "karpenter_node_class" {
             encrypted: true
             iops: ${var.disk_iops}
             deleteOnTermination: true
-      role: ${aws_iam_role.eks_karpenter_role[0].name}
+      role: ${aws_iam_role.eks_karpenter_role_node[0].name}
       subnetSelectorTerms:
         - tags:
             karpenter.sh/discovery: ${local.cluster_name}
@@ -264,6 +289,8 @@ resource "kubectl_manifest" "karpenter_node_class" {
     helm_release.karpenter
   ]
 }
+
+############################################## Node Pools ##############################################
 
 resource "kubectl_manifest" "karpenter_node_pool_tools" {
   count     = var.karpenter_enable ? 1 : 0
@@ -288,7 +315,7 @@ resource "kubectl_manifest" "karpenter_node_pool_tools" {
               values: ["t", "c", "m"]
             - key: "karpenter.k8s.aws/instance-cpu"
               operator: In
-              values: ["4", "8"]
+              values: ["1", "2", "4", "8"]
             - key: "karpenter.k8s.aws/instance-hypervisor"
               operator: In
               values: ["nitro"]
@@ -349,10 +376,6 @@ resource "kubectl_manifest" "karpenter_node_pool_app" {
             - key: "karpenter.sh/capacity-type"
               operator: In
               values: ["${var.capacity_type}"]
-          taints:
-            - key: workload
-              value: auto
-              effect: NoSchedule
       limits:
         cpu: 1000
       disruption:
