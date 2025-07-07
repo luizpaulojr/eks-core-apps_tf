@@ -127,3 +127,34 @@ variable "kubecost_ingress_class" {
   type    = string
   default = null
 }
+
+# karpenter
+variable "karpenter_enable" {
+  type    = string
+  default = null
+}
+
+variable "karpenter_version" {
+  type    = string
+  default = null
+}
+
+variable "disk_size" {
+  type    = number
+  default = null
+}
+
+variable "disk_iops" {
+  type    = number
+  default = null
+}
+
+variable "capacity_type" {
+  type    = string
+  default = null
+}
+
+variable "cluster_version" {
+  type    = number
+  default = null
+}
