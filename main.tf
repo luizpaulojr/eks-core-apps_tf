@@ -4,11 +4,11 @@ module "eks_core_apps" {
   cluster_name = "eks-default"
  
   # kube_proxy - https://docs.aws.amazon.com/pt_br/eks/latest/userguide/managing-kube-proxy.html
-  kube_proxy_enable  = true
+  kube_proxy_enable  = false
   kube_proxy_version = "v1.30.0-eksbuild.3"
 
   # coredns - https://docs.aws.amazon.com/pt_br/eks/latest/userguide/managing-coredns.html
-  coredns_enable  = true
+  coredns_enable  = false
   coredns_version = "v1.11.1-eksbuild.9"
 
   # vpc_cni - https://artifacthub.io/packages/helm/aws/aws-vpc-cni
@@ -30,7 +30,7 @@ module "eks_core_apps" {
   metrics_server_version = "3.12.1"
 
   # nginx_controler - https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
-  nginx_controler_enable  = false
+  nginx_controler_enable  = true
   certificate_arn         = "arn:aws:acm:..."
   nginx_controler_version = "4.10.0"
 
@@ -50,7 +50,7 @@ module "eks_core_apps" {
   kube_prometheus_stack_enable                  = true
   kube_prometheus_stack_version                 = "68.1.0"
   kube_prometheus_stack_grafana_ingress_class   = "nginx"
-  kube_prometheus_stack_grafana_url             = "grafana.portofazneo.dev.awsporto"
+  kube_prometheus_stack_grafana_url             = "grafana.dominio"
   
   # aws_ebs_csi_driver - https://artifacthub.io/packages/helm/aws-ebs-csi-driver/aws-ebs-csi-driver
   ebs_csi_driver_enable      = true
@@ -60,6 +60,6 @@ module "eks_core_apps" {
   external_dns_enable              = true
   external_dns_version             = "8.7.4"
   external_dns_hosted_zone_id      = "Z06655772UAPK5LQZERAO"
-  external_dns_hosted_zone_domain  = "portofazneo.dev.awsporto"
+  external_dns_hosted_zone_domain  = "dominio"
 
 }
