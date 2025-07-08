@@ -18,6 +18,7 @@ module "eks_core_apps" {
   sg_filter_name      = "eks-cluster-node" # sg do node
 
   # aws_load_balancer_controller - https://artifacthub.io/packages/helm/aws/aws-load-balancer-controller
+  #(Necessário add tag na Subnet"kubernetes.io/role/internal-elb:1")
   alb_controller_enable  = true
   alb_controller_version = "1.13.3"
 
@@ -49,7 +50,7 @@ module "eks_core_apps" {
   kube_dashboard_url           = "kubedashboard.dominio"
 
   # kubecost - https://artifacthub.io/packages/helm/kubecost/cost-analyzer
-  kubecost_enable        = true
+  kubecost_enable        = false
   kubecost_version       = "2.8.0"
   kubecost_ingress_class = "nginx"
   kubecost_url           = "kubecost.dominio"
@@ -61,7 +62,7 @@ module "eks_core_apps" {
   kube_prometheus_stack_grafana_url             = "grafana.dominio"
   
   # aws_ebs_csi_driver - https://artifacthub.io/packages/helm/aws-ebs-csi-driver/aws-ebs-csi-driver
-  ebs_csi_driver_enable      = true
+  ebs_csi_driver_enable      = false
   ebs_csi_driver_version     = "2.45.1"
   
   # external_dns - https://artifacthub.io/packages/helm/bitnami/external-dns
