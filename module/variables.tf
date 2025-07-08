@@ -124,7 +124,6 @@ variable "kubecost_ingress_class" {
   default = null
 }
 
-
 # kube_prometheus_stack
 variable "kube_prometheus_stack_enable" {
   type    = bool
@@ -138,7 +137,6 @@ variable "kube_prometheus_stack_grafana_url" {
   type    = string
   default = ""
 }
-
 variable "kube_prometheus_stack_grafana_ingress_class" {
   type    = string
   default = null
@@ -150,13 +148,15 @@ variable "ebs_csi_driver_enable" {
   default = false
 }
 variable "ebs_csi_driver_version" {
-  
+  type    = string
+  default = null
+}
+
 # karpenter
 variable "karpenter_enable" {
   type    = string
   default = null
 }
-
 variable "karpenter_version" {
   type    = string
   default = null
@@ -178,22 +178,21 @@ variable "external_dns_hosted_zone_id" {
 variable "external_dns_hosted_zone_domain" {
   type    = string
   default = ""
+}
 
+# karpenter node pool config
 variable "disk_size" {
   type    = number
   default = null
 }
-
 variable "disk_iops" {
   type    = number
   default = null
 }
-
 variable "capacity_type" {
   type    = string
   default = null
 }
-
 variable "cluster_version" {
   type    = number
   default = null
