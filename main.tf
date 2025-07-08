@@ -18,8 +18,8 @@ module "eks_core_apps" {
   sg_filter_name      = "eks-cluster-node" # sg do node
 
   # aws_load_balancer_controller - https://artifacthub.io/packages/helm/aws/aws-load-balancer-controller
-  alb_controller_enable  = false
-  alb_controller_version = "1.7.2"
+  alb_controller_enable  = true
+  alb_controller_version = "1.13.3"
 
   # karpenter - https://artifacthub.io/packages/helm/aws-karpenter-crd/karpenter-crd
   karpenter_enable  = true
@@ -31,27 +31,43 @@ module "eks_core_apps" {
 
   # autoscaler - https://artifacthub.io/packages/helm/cluster-autoscaler/cluster-autoscaler
   autoscaler_enable  = false
-  autoscaler_version = "9.37.0"
+  autoscaler_version = "9.47.0"
 
   # metrics_server - https://artifacthub.io/packages/helm/metrics-server/metrics-server
   metrics_server_enable  = true
   metrics_server_version = "3.12.1"
 
   # nginx_controler - https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
-  nginx_controler_enable  = false
+  nginx_controler_enable  = true
   #certificate_arn         = "arn:aws:acm:..."
-  nginx_controler_version = "4.12.3"
+  nginx_controler_version = "4.13.0"
 
   # kube_dashboard - https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard
   kube_dashboard_enable        = false
-  kube_dashboard_version       = "7.1.3"
+  kube_dashboard_version       = "7.13.0"
   kube_dashboard_ingress_class = "nginx"
   kube_dashboard_url           = "kubedashboard.dominio"
 
   # kubecost - https://artifacthub.io/packages/helm/kubecost/cost-analyzer
-  kubecost_enable        = false
-  kubecost_version       = "2.3.0"
-  csi_driver_version     = "2.31.0"
+  kubecost_enable        = true
+  kubecost_version       = "2.8.0"
   kubecost_ingress_class = "nginx"
   kubecost_url           = "kubecost.dominio"
+
+  # kube_prometheus_stack - https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
+  kube_prometheus_stack_enable                  = false
+  kube_prometheus_stack_version                 = "75.9.0"
+  kube_prometheus_stack_grafana_ingress_class   = "nginx"
+  kube_prometheus_stack_grafana_url             = "grafana.dominio"
+  
+  # aws_ebs_csi_driver - https://artifacthub.io/packages/helm/aws-ebs-csi-driver/aws-ebs-csi-driver
+  ebs_csi_driver_enable      = true
+  ebs_csi_driver_version     = "2.45.1"
+  
+  # external_dns - https://artifacthub.io/packages/helm/bitnami/external-dns
+  external_dns_enable              = false
+  external_dns_version             = "8.9.1"
+  external_dns_hosted_zone_id      = "Z06655772UAPK5LQZERAO"
+  external_dns_hosted_zone_domain  = "dominio"
+
 }

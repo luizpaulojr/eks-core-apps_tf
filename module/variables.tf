@@ -115,10 +115,6 @@ variable "kubecost_version" {
   type    = string
   default = null
 }
-variable "csi_driver_version" {
-  type    = string
-  default = null
-}
 variable "kubecost_url" {
   type    = string
   default = ""
@@ -128,6 +124,33 @@ variable "kubecost_ingress_class" {
   default = null
 }
 
+
+# kube_prometheus_stack
+variable "kube_prometheus_stack_enable" {
+  type    = bool
+  default = false
+}
+variable "kube_prometheus_stack_version" {
+  type    = string
+  default = null
+}
+variable "kube_prometheus_stack_grafana_url" {
+  type    = string
+  default = ""
+}
+
+variable "kube_prometheus_stack_grafana_ingress_class" {
+  type    = string
+  default = null
+}
+
+# aws_ebs_csi_driver 
+variable "ebs_csi_driver_enable" {
+  type    = bool
+  default = false
+}
+variable "ebs_csi_driver_version" {
+  
 # karpenter
 variable "karpenter_enable" {
   type    = string
@@ -138,6 +161,23 @@ variable "karpenter_version" {
   type    = string
   default = null
 }
+
+# external_dns 
+variable "external_dns_enable" {
+  type    = bool
+  default = false
+}
+variable "external_dns_version" {
+  type    = string
+  default = null
+}
+variable "external_dns_hosted_zone_id" {
+  type    = string
+  default = ""
+}
+variable "external_dns_hosted_zone_domain" {
+  type    = string
+  default = ""
 
 variable "disk_size" {
   type    = number

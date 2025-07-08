@@ -1,0 +1,76 @@
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+grafana:
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  ingress:
+    enabled: true
+    hosts:
+    - ${kube_prometheus_stack_grafana_url}
+    ingressClassName: ${kube_prometheus_stack_grafana_ingress_class}
+  persistence:
+    accessModes:
+    - ReadWriteOnce
+    enabled: true
+    storageClassName: ebs-csi
+    size: 50Gi
+
+kube-state-metrics:
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "150m"
+    limits:
+      memory: "256Mi"
+      cpu: "300m"
+
+prometheus:
+  prometheusSpec:
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]        
+          resources:
+            requests:
+              storage: 50Gi
+          storageClassName: ebs-csi
+
+prometheusOperator:
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "400m"
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "100m"
+    limits:
+      memory: "128Mi"
+      cpu: "200m"
+
+
