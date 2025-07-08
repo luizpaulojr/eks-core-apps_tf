@@ -21,6 +21,14 @@ module "eks_core_apps" {
   alb_controller_enable  = true
   alb_controller_version = "1.13.3"
 
+  # karpenter - https://artifacthub.io/packages/helm/aws-karpenter-crd/karpenter-crd
+  karpenter_enable  = true
+  karpenter_version = "1.5.0"
+  cluster_version   = "1.33"
+  capacity_type     = "spot"
+  disk_size         = 30
+  disk_iops         = 3000
+
   # autoscaler - https://artifacthub.io/packages/helm/cluster-autoscaler/cluster-autoscaler
   autoscaler_enable  = false
   autoscaler_version = "9.47.0"

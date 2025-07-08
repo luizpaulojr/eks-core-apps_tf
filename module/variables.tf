@@ -150,6 +150,14 @@ variable "ebs_csi_driver_enable" {
   default = false
 }
 variable "ebs_csi_driver_version" {
+  
+# karpenter
+variable "karpenter_enable" {
+  type    = string
+  default = null
+}
+
+variable "karpenter_version" {
   type    = string
   default = null
 }
@@ -170,4 +178,23 @@ variable "external_dns_hosted_zone_id" {
 variable "external_dns_hosted_zone_domain" {
   type    = string
   default = ""
+
+variable "disk_size" {
+  type    = number
+  default = null
+}
+
+variable "disk_iops" {
+  type    = number
+  default = null
+}
+
+variable "capacity_type" {
+  type    = string
+  default = null
+}
+
+variable "cluster_version" {
+  type    = number
+  default = null
 }
